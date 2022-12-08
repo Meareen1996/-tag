@@ -1,0 +1,315 @@
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+<title>SimulateUpDownKeySelect.html</title>
+
+<style type="text/css">
+    #divSelect {
+        border: 1px solid red;
+        width: 208px !important;
+        width: 210px;
+    }
+
+    #divSelect ul {
+        width: 200px;
+        margin: 3px;
+        margin-left: -35px;
+        *margin-left: 3px;
+        overflow: hidden
+    }
+
+    #divSelect ul li {
+        float: left;
+        list-style-type: none;
+        line-height: 20px;
+        font: 14px arial;
+        text-align: center;
+        padding: 2px
+    }
+
+    #divSelect li:hover {
+        background: green;
+        cursor: pointer
+    }
+
+    #txtInput {
+        width: 205px;
+    }
+</style>
+
+
+
+
+
+<form method="post" action="##">
+
+    <input type="text" id="txtInput" value="" autocomplete="off" onkeydown="if(event.keyCode==13)return false;">
+
+    <!--防止回车键触发表单提交 onKeyPress-->
+
+    <div id="divSelect">
+        <ul class="dis">
+            <li>科幻片</li>
+            <li>战争片</li>
+            <li>动作片</li>
+            <li>爱情片</li>
+            <li>剧情片反反复复反反复复反反复复</li>
+            <li>记录片</li>
+            <li>综艺片</li>
+            <li>喜剧片灌灌灌灌灌灌灌灌灌灌灌灌灌灌灌</li>
+            <li>动画片</li>
+            <li>励志片</li>
+            <li>恐怖片</li>
+            <li>古装片管灌灌灌灌灌灌灌灌灌灌</li>
+            <li>电视剧</li>
+            <li>读书</li>
+            <li>小说</li>
+            <li>作品集</li>
+            <li>历史</li>
+            <li>诗歌</li>
+            <li>散文</li>
+            <li>军事</li>
+        </ul>
+    </div>
+
+
+</form>
+
+<script type="text/javascript">
+    var upKeyCode = 38;
+
+    var downKeyCode = 40;
+
+    var enterKeyCode = 13;
+
+    var oInput = $("txtInput");
+
+    oInput.options = $("divSelect").getElementsByTagName("li");
+    oInput.seletedIndex = -1;
+
+    oInput.focus();
+
+
+    let resObj = {}; //当前对应的行数和目标item
+    let arr = [0];//行数数组
+    let hang; //当前行数据
+    let addStep;//跳多少步骤到达
+    let upOrDown = "";//上移or下移
+
+    let downOrUp = '';
+    // 两个值之间有多少数字
+    function bettArr(s, b) {
+        let res = []
+        for (let i = s; i <= b; i++) {
+            res.push(i)
+        }
+        return res
+    }
+
+    //确定分行信息
+    function getT() {
+        let rArr = Array.from(oInput.options);
+        rArr.forEach((element, index) => {
+            y1 = oInput.options[index].getBoundingClientRect().y
+            let addIdx = index + 1;
+            if (addIdx < rArr.length - 1) {
+                y2 = oInput.options[addIdx].getBoundingClientRect().y
+            }
+            //出现不一致，把index以前的li放入一个对象：key的行，val是index以前的数组
+            if (y2 > y1) {
+                arr.push(index)
+            }
+
+        });
+        arr.push(rArr.length)
+
+        // 每行包含的li元素
+        arr.forEach((item, index) => {
+            resObj[String(index + 1)] = bettArr(arr[index], arr[index + 1])
+            if (index > 0) {
+                resObj[index + 1] = bettArr(arr[index], arr[index + 1]).slice(1)
+                if (resObj[index + 1].length == 0) {
+                    delete resObj[index + 1]
+                }
+            }
+        })
+    }
+    getT()
+
+    console.log("arr-------->", arr)
+    console.log("resObj------->", resObj)
+    // 总共行数值(处理超过行数或者小于行数0)
+    const h = Object.keys(resObj).length - 1
+    console.log("---------->h", h)
+
+    function $(sId) {
+        return document.getElementById(sId);
+    }
+
+    function clearSelectedOptBgColor(target) {
+        if (target.seletedIndex >= 0)
+            target.options[target.seletedIndex].style.background = "";
+    }
+
+    //设置选中样式
+    function setSelectedOptBgColor(target) {
+        console.log("target.seletedIndex----->", target.seletedIndex)
+        target.options[target.seletedIndex].style.background = "green";
+
+    }
+
+
+    //找到当前行
+    function getCurrent(target) {
+
+        // 遍历对象，找到当前选中对象的行
+        let whichHang;
+        for (const key in resObj) {
+            isEx = resObj[key].some(element => element == target.seletedIndex)
+            console.log("isEx---->", isEx)
+            if (isEx) {
+                whichHang = key;
+                break
+            }
+        }
+        // 当前选中对象所在的索引
+        let whichIdx;
+        for (const key in resObj) {
+            findIndx = resObj[key].findIndex(element => element == target.seletedIndex)
+            // console.log("findIndx---->", findIndx)
+            if (findIndx != -1) {
+                whichIdx = findIndx;
+                break
+            }
+        }
+
+        if (downOrUp == "down") {
+            // 1、whichIdx + 1<=目标源长度：跳---->当前源长度
+            // 2、whichIdx + 1>目标源长度：跳---->当前源长度-(whichIdx + 1-目标源长度)
+            // 3、参数：
+            // 01、目标源长度--->resObj[Number(whichHang) + 1].length
+            // 02、当前源长度--->resObj[whichHang].length
+            // 03、Number(whichIdx) + 1
+            console.log("Number(whichHang) + 1------->", Number(whichHang) + 1)
+            if (!Number(whichHang) + 1 > h) {
+                debugger
+                resObj[Number(whichHang) + 1] = resObj[0]
+            }
+
+
+            // if (resObj[Number(whichHang) + 1] && resObj[Number(whichHang) + 1].length) {
+            if (Number(whichIdx) + 1 <= resObj[Number(whichHang) + 1].length) {
+                addStep = resObj[whichHang].length
+            } else if (Number(whichIdx) + 1 > resObj[Number(whichHang) + 1].length) {
+                addStep = resObj[whichHang].length - (Number(whichIdx) + 1 - resObj[Number(whichHang) + 1].length)
+            }
+            // }
+
+            // console.log("addStep------------>", addStep)
+        } else if (downOrUp == "up") {
+            // if (!resObj[Number(whichHang) - 1]) {
+            //     resObj[Number(whichHang) - 1] = 
+            // }
+            // 1、whichIdx + 1<=目标源长度：跳---->目标源长度
+            // 2、whichIdx + 1>目标源长度：跳---->目标源长度+(whichIdx + 1-目标源长度)
+            // 3、参数：
+            // 01、目标源长度--->resObj[Number(whichHang) - 1].length
+            // 02、当前源长度--->resObj[whichHang].length
+            // 03、Number(whichIdx) + 1
+            // if (resObj[Number(whichHang) - 1] && resObj[Number(whichHang) - 1].length) {
+            if (Number(whichIdx) + 1 <= resObj[Number(whichHang) - 1].length) {
+                addStep = resObj[Number(whichHang) - 1].length
+            } else if (Number(whichIdx) + 1 > resObj[Number(whichHang) - 1].length) {
+                addStep = resObj[Number(whichHang) - 1].length + (Number(whichIdx) + 1 - resObj[Number(whichHang) - 1].length)
+            }
+            // }
+
+
+        }
+
+        console.log("whichHang33---->", whichHang)
+        console.log("whichIdx33---->", whichIdx)
+
+    }
+
+    oInput.onkeyup = function (event) {
+        if (event == undefined)
+            event = window.event;
+
+        switch (event.keyCode) {
+
+            case 37:
+                clearSelectedOptBgColor(this);
+                this.seletedIndex--;
+                if (this.seletedIndex < 0)
+                    this.seletedIndex = oInput.options.length - 1;
+                this.value = oInput.options[this.seletedIndex].innerHTML;
+                setSelectedOptBgColor(this);
+
+                break;
+
+            case 38:
+                downOrUp = "up"
+                getCurrent(this)
+                clearSelectedOptBgColor(this);
+                this.seletedIndex -= addStep;
+                if (this.seletedIndex < 0)
+                    this.seletedIndex = oInput.options.length - 1;
+                this.value = oInput.options[this.seletedIndex].innerHTML;
+                setSelectedOptBgColor(this);
+
+                break;
+
+            case 39:
+
+                clearSelectedOptBgColor(this);
+
+                this.seletedIndex++;
+
+                if (this.seletedIndex >= oInput.options.length)
+                    this.seletedIndex = 0;
+                this.value = oInput.options[this.seletedIndex].innerHTML;
+                setSelectedOptBgColor(this);
+                break;
+
+            case 40:
+
+                if (this.seletedIndex == -1) {
+                    this.seletedIndex += 1
+                    this.value = oInput.options[this.seletedIndex].innerHTML;
+                    console.log("this.seletedIndex------>", this.seletedIndex)
+                    setSelectedOptBgColor(this);
+                    break
+                }
+
+                // this.seletedIndex+=1;
+                // if()
+                downOrUp = "down"
+                getCurrent(this)
+                clearSelectedOptBgColor(this);
+                this.seletedIndex += addStep;
+
+                if (this.seletedIndex >= oInput.options.length)
+                    this.seletedIndex = 0;
+                this.value = oInput.options[this.seletedIndex].innerHTML;
+                setSelectedOptBgColor(this);
+
+                break;
+
+            case enterKeyCode:
+                this.value = oInput.options[this.seletedIndex].innerHTML;
+                break;
+
+        }
+
+    };
+
+    oInput.onblur = function () {
+
+        clearSelectedOptBgColor(this);
+
+        this.seletedIndex = 1;
+
+    };
+
+
+</script>
